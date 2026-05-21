@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа: Равноускоренное движение</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="wrapper">
+    <header class="cover">
+        <h1>Изучение равноускоренного движения по наклонной плоскости</h1>
+    </header>
+    <div class="content">
+        <div class="notice-box">
+            <h2 style="color:#D6703A">⚠ Важное предупреждение</h2>
+            <p>Виртуальная работа не заменяет реальный эксперимент. Данная программа служит для подготовки и проверки расчётов.</p>
+            <h3 style="color:#575860">Описание установки</h3>
+            <p>Штатив фиксирует жёлоб. Шарик скатывается по жёлобу, внизу — цилиндр-упор.</p>
+            <h3 style="color:#575860">Цель работы</h3>
+            <p>Подтвердить: <strong>s=at²/2</strong>, откуда <strong>a=2s/t²=const</strong>.</p>
+            <h3 style="color:#575860">Приборы</h3>
+            <ul>
+                <li>Измерительная лента</li>
+                <li>Метроном/секундомер</li>
+                <li>Жёлоб, шарик, штатив</li>
+                <li>Цилиндр-упор</li>
+            </ul>
+        </div>
+        <div class="top-panel">
+            <div class="control-box">
+                <div><label>Угол α</label><input type="number" id="angleInput" value="6.0" min="0.1" max="10" step="0.1"></div>
+                <button class="btn btn-primary" id="btnSet">Установить</button>
+                <button class="btn btn-primary" id="btnStart">▶ ПУСК</button>
+                <button class="btn btn-secondary" id="btnReset">✕ СБРОС</button>
+                <span class="info-item info-time" id="infoTime">t=0.00с</span>
+                <span class="info-item info-path" id="infoPath">s=0.00м</span>
+                <span class="info-item info-speed" id="infoSpeed">v=0.00м/с</span>
+            </div>
+            <div class="scheme-box">
+                <canvas id="schemeCanvas" width="450" height="280"></canvas>
+            </div>
+        </div>
+        <div class="table-box">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Путь s,м</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr>
+                </thead>
+                <tbody>
+                    <tr id="rowTime"><td><strong>Время t,с</strong></td><td colspan="10">---</td></tr>
+                    <tr id="rowSpeed"><td><strong>Скорость v,м/с</strong></td><td colspan="10">---</td></tr>
+                    <tr id="rowAccel"><td><strong>Ускорение a,м/с²</strong></td><td colspan="10">---</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="plots-box">
+            <div class="charts-grid">
+                <div class="chart-container"><canvas id="chartST"></canvas></div>
+                <div class="chart-container"><canvas id="chartVT"></canvas></div>
+                <div class="chart-container"><canvas id="chartAT"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-logo"><img src="logoLeft.png" alt="Wolf.Fox"></div>
+        <div class="footer-center">
+            <div class="footer-title">📬 Контакты</div>
+            <div class="footer-contacts">
+                ✉ <a href="mailto:melissaveyn@gmail.com">melissaveyn@gmail.com</a><br>
+                ✉ <a href="mailto:akotenkov899@gmail.com">akotenkov899@gmail.com</a><br>
+                📱 <a href="https://t.me/riya_mel">@riya_mel</a> · <a href="https://t.me/SHeeffffffff">@SHeeffffffff</a>
+            </div>
+        </div>
+        <div class="footer-logo"><img src="logoRight.png" alt="КИПФИН"></div>
+        <div class="footer-bottom">Лабораторный практикум · 2026</div>
+    </footer>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
