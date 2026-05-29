@@ -24,18 +24,27 @@ body {
     padding: 35px;
     color: #fff;
     text-align: center;
-}
-
-.cover::after {
-    content: '';
-    display: block;
-    height: 6px;
-    background: #575860;
-    margin-top: 15px;
+    position: relative;
 }
 
 .cover h1 {
     font-size: 1.8rem;
+}
+
+.mode-badge {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); background: rgba(0,0,0,0.9); }
 }
 
 .content {
@@ -54,6 +63,14 @@ body {
 .notice-box ul {
     margin-left: 20px;
     margin-top: 10px;
+}
+
+.secret-hint {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #D6703A;
+    color: #D6703A;
+    font-size: 0.8rem;
 }
 
 .top-panel {
@@ -151,8 +168,9 @@ body {
 #schemeCanvas {
     display: block;
     margin: 0 auto;
-    background: #fff;
+    background: #f0f0f0;
     border-radius: 8px;
+    cursor: pointer;
 }
 
 .table-box {
@@ -180,6 +198,12 @@ body {
     padding: 6px;
     text-align: center;
     border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table td.highlight {
+    background: #ea580c20;
+    color: #ea580c;
+    font-weight: bold;
 }
 
 .plots-box {
@@ -222,11 +246,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.footer-logo img {
-    max-width: 80%;
-    max-height: 80%;
+.footer-logo:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.02);
+}
+
+.logo-placeholder {
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
 }
 
 .footer-center {
@@ -263,6 +295,16 @@ body {
     border-top: 1px solid rgba(255,255,255,.15);
     font-size: .8rem;
     color: #aaa;
+}
+
+/* Анимация для шарика */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.ball-animation {
+    animation: bounce 0.3s ease;
 }
 
 @media (max-width: 900px) {
