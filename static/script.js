@@ -256,8 +256,6 @@ function drawScheme() {
     
     ctx.clearRect(0, 0, W, H);
     
-    ctx.fillStyle = '#e8e8e8';
-    ctx.fillRect(0, 0, W, H);
     
     sx = 60;
     sy = 50;
