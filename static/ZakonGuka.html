@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа: Сила упругости. Закон Гука</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #FFF9EB;
+            font-family: 'Segoe UI', 'Times New Roman', 'Georgia', serif;
+            color: #2c2c2c;
+        }
+
+        .wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #FFF9EB;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== ШАПКА ========== */
+        .header {
+            background: #5D0D18;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid #9FB2AC;
+        }
+
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .logo-text {
+            color: #FFF9EB;
+            font-weight: bold;
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .header-title {
+            text-align: center;
+        }
+
+        .header-title h1 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.75);
+        }
+
+        .header-title h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #FFF9EB;
+            margin-top: 5px;
+        }
+
+        .header-placeholder {
+            width: 80px;
+        }
+
+        /* ========== ОСНОВНОЙ КОНТЕНТ ========== */
+        .content {
+            display: flex;
+            gap: 25px;
+            padding: 25px;
+            flex: 1;
+        }
+
+        /* Левая панель */
+        .left-panel {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Правая панель */
+        .right-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ========== КАРТОЧКИ ========== */
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            overflow: hidden;
+            border: 1px solid #e0d5c0;
+        }
+
+        .card-header {
+            background: #9FB2AC;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.3rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c2c2c;
+            flex: 1;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            color: #2c2c2c;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* ========== КАНВАС ДЛЯ СХЕМЫ ========== */
+        .setup-canvas {
+            background: #f5f0e4;
+            border-radius: 12px;
+            width: 100%;
+            height: auto;
+            border: 1px solid #d4c9b0;
+            display: block;
+        }
+
+        /* ========== УПРАВЛЕНИЕ ========== */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #5D0D18;
+        }
+
+        .weight-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weight-control button {
+            width: 40px;
+            height: 40px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-minus {
+            background: #9FB2AC;
+            color: #2c2c2c;
+        }
+
+        .btn-plus {
+            background: #5D0D18;
+            color: #FFF9EB;
+        }
+
+        .weight-control button:hover {
+            opacity: 0.85;
+            transform: scale(0.98);
+        }
+
+        .weight-control input {
+            width: 70px;
+            height: 40px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: 2px solid #9FB2AC;
+            border-radius: 8px;
+            background: #FFF9EB;
+            font-family: monospace;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #5D0D18;
+            color: #FFF9EB;
+        }
+
+        .btn-primary:hover {
+            background: #7a1420;
+        }
+
+        .btn-secondary {
+            background: #9FB2AC;
+            color: #2c2c2c;
+        }
+
+        .btn-secondary:hover {
+            background: #8a9e97;
+        }
+
+        /* ========== ИНФОРМАЦИОННЫЕ СТРОКИ ========== */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0d5c0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #5D0D18;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: #2c2c2c;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        /* ========== ТАБЛИЦА ========== */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            background: #9FB2AC;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: #2c2c2c;
+            border: 1px solid #c5b89a;
+        }
+
+        .data-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid #e0d5c0;
+            background: #FFF9EB;
+        }
+
+        .data-table tr.highlight td {
+            background: #e8dcc8;
+        }
+
+        /* ========== ГРАФИК ========== */
+        .chart-container {
+            background: #f5f0e4;
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-placeholder {
+            text-align: center;
+            color: #8a7e66;
+        }
+
+        .chart-placeholder svg {
+            margin-bottom: 10px;
+        }
+
+        /* ========== РЕЗУЛЬТАТЫ ========== */
+        .result-box {
+            background: #f5f0e4;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result-placeholder {
+            color: #8a7e66;
+            font-style: italic;
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #5D0D18;
+        }
+
+        /* ========== ФУТЕР ========== */
+        .footer {
+            background: #9FB2AC;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .footer-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #5D0D18;
+        }
+
+        .footer-center {
+            text-align: center;
+        }
+
+        .footer-center p {
+            margin: 5px 0;
+            color: #2c2c2c;
+        }
+
+        .footer-contacts a {
+            color: #5D0D18;
+            text-decoration: none;
+        }
+
+        .footer-contacts a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-right {
+            color: #5D0D18;
+        }
+
+        /* ========== АДАПТАЦИЯ ========== */
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .header-title h2 {
+                font-size: 1.2rem;
+            }
+            
+            .header-title h1 {
+                font-size: 0.8rem;
+            }
+            
+            .header-logo, .header-placeholder {
+                width: 50px;
+            }
+            
+            .footer {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* ========== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ========== */
+        .theory-text {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #4a4a4a;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0d5c0;
+        }
+
+        .formula {
+            font-family: monospace;
+            font-weight: bold;
+            color: #5D0D18;
+        }
+
+        .note {
+            background: #FFF9EB;
+            border-left: 3px solid #9FB2AC;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Шапка -->
+        <header class="header">
+            <div class="header-logo">
+                <div class="logo-text">КИПФИН</div>
+            </div>
+            <div class="header-title">
+                <h1>Лабораторная работа</h1>
+                <h2>Сила упругости. Закон Гука</h2>
+            </div>
+            <div class="header-placeholder"></div>
+        </header>
+
+        <!-- Основной контент -->
+        <div class="content">
+            <!-- Левая панель - схема установки -->
+            <div class="left-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔬</span>
+                        <h3>Схема установки</h3>
+                    </div>
+                    <div class="card-body">
+                        <svg class="setup-canvas" width="100%" height="380" viewBox="0 0 500 380" style="background: #f5f0e4; border-radius: 12px;">
+                            <!-- Штатив (вертикальная стойка) -->
+                            <rect x="45" y="30" width="10" height="200" fill="#5D0D18" rx="2"/>
+                            <!-- Основание штатива -->
+                            <rect x="25" y="210" width="50" height="10" fill="#5D0D18" rx="2"/>
+                            <!-- Верхний зажим -->
+                            <rect x="40" y="25" width="20" height="12" fill="#9FB2AC" rx="2"/>
+                            
+                            <!-- Пружина (зигзаг) -->
+                            <polyline points="250,60 235,72 265,84 235,96 265,108 235,120 265,132 235,144 265,156 235,168 265,180 250,192" 
+                                stroke="#5D0D18" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            
+                            <!-- Крюк -->
+                            <rect x="244" y="192" width="12" height="14" fill="#9FB2AC" rx="2"/>
+                            <circle cx="250" cy="212" r="8" fill="#9FB2AC"/>
+                            
+                            <!-- Грузы (отображаются через JS, но для статики покажем один) -->
+                            <g id="weightsGroup">
+                                <!-- Груз 1 -->
+                                <rect x="227" y="225" width="46" height="35" fill="#5D0D18" rx="3"/>
+                                <rect x="232" y="230" width="36" height="8" fill="#9FB2AC" rx="2"/>
+                                <text x="250" y="248" text-anchor="middle" fill="#FFF9EB" font-size="12" font-weight="bold">1</text>
+                                
+                                <!-- Груз 2 -->
+                                <rect x="227" y="268" width="46" height="35" fill="#5D0D18" rx="3"/>
+                                <rect x="232" y="273" width="36" height="8" fill="#9FB2AC" rx="2"/>
+                                <text x="250" y="291" text-anchor="middle" fill="#FFF9EB" font-size="12" font-weight="bold">2</text>
+                                
+                                <!-- Груз 3 -->
+                                <rect x="227" y="311" width="46" height="35" fill="#5D0D18" rx="3"/>
+                                <rect x="232" y="316" width="36" height="8" fill="#9FB2AC" rx="2"/>
+                                <text x="250" y="334" text-anchor="middle" fill="#FFF9EB" font-size="12" font-weight="bold">3</text>
+                            </g>
+                            
+                            <!-- Подписи -->
+                            <text x="50" y="130" text-anchor="middle" fill="#5D0D18" font-size="11" font-weight="bold">Штатив</text>
+                            <text x="280" y="125" text-anchor="middle" fill="#5D0D18" font-size="11" font-weight="bold">Пружина</text>
+                            <text x="280" y="350" text-anchor="middle" fill="#5D0D18" font-size="11" font-weight="bold">Грузы (3 шт)</text>
+                            
+                            <!-- Линейка -->
+                            <rect x="340" y="70" width="4" height="250" fill="#9FB2AC"/>
+                            <rect x="330" y="70" width="24" height="4" fill="#9FB2AC"/>
+                            <rect x="330" y="160" width="24" height="4" fill="#9FB2AC"/>
+                            <rect x="330" y="250" width="24" height="4" fill="#9FB2AC"/>
+                            <rect x="330" y="320" width="24" height="4" fill="#9FB2AC"/>
+                            <text x="360" y="74" text-anchor="start" fill="#5D0D18" font-size="9">l₀</text>
+                            <text x="360" y="164" text-anchor="start" fill="#5D0D18" font-size="9">l₁</text>
+                            <text x="360" y="254" text-anchor="start" fill="#5D0D18" font-size="9">l₂</text>
+                            <text x="360" y="324" text-anchor="start" fill="#5D0D18" font-size="9">l₃</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">⚙️</span>
+                        <h3>Управление экспериментом</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="control-group">
+                            <label>Количество грузов:</label>
+                            <div class="weight-control">
+                                <button class="btn-minus" id="btnMinus" onclick="changeWeight(-1)">−</button>
+                                <input type="number" id="weightCount" value="3" min="0" max="5" readonly>
+                                <button class="btn-plus" id="btnPlus" onclick="changeWeight(1)">+</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btnAccept" onclick="acceptWeights()">Принять</button>
+                        <button class="btn btn-secondary" id="btnReset" onclick="resetExperiment()">Сбросить</button>
+                        
+                        <div class="theory-text">
+                            <p><span class="formula">Закон Гука:</span> <strong>F = k · Δl</strong></p>
+                            <p>где <em>F</em> — сила упругости (Н), <em>k</em> — жёсткость (Н/м), <em>Δl</em> — удлинение (м)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h3>Текущие показания</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Грузов:</span>
+                            <span class="info-value" id="infoCount">3</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Длина пружины:</span>
+                            <span class="info-value" id="infoLength">6.2 см</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Удлинение Δl:</span>
+                            <span class="info-value" id="infoStretch">0.6 см</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Сила упругости F:</span>
+                            <span class="info-value" id="infoForce">2.35 Н</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая панель - таблица и графики -->
+            <div class="right-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📋</span>
+                        <h3>Таблица измерений</h3>
+                        <button class="btn-icon" id="btnDescription" onclick="showDescription()" title="Описание работы">ℹ️</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="data-table" id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>№</th>
+                                        <th>m, кг</th>
+                                        <th>F = mg, Н</th>
+                                        <th>l, м</th>
+                                        <th>Δl = x, м</th>
+                                        <th>k, Н/м</th>
+                                        <th>k<sub>ср</sub>, Н/м</th>
+                                        <th>ε<sub>k</sub></th>
+                                        <th>Δk<sub>ср</sub>, Н/м</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <tr class="highlight">
+                                        <td>0</td><td>0</td><td>0</td><td>0.056</td><td>0</td><td>0</td><td></td><td></td><td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1</td><td>0.080</td><td>0.784</td><td>0.058</td><td>0.002</td><td>392</td><td>392</td><td>0.08</td><td>31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td><td>0.160</td><td>1.568</td><td>0.060</td><td>0.004</td><td>392</td><td>392</td><td>0.08</td><td>31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td><td>0.240</td><td>2.352</td><td>0.062</td><td>0.006</td><td>392</td><td>392</td><td>0.08</td><td>31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td><td>0.320</td><td>3.136</td><td>0.064</td><td>0.008</td><td>392</td><td>392</td><td>0.08</td><td>31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td><td>0.400</td><td>3.920</td><td>0.066</td><td>0.010</td><td>392</td><td>392</td><td>0.08</td><td>31</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📈</span>
+                        <h3>График зависимости F = f(Δl)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <svg width="100%" height="260" viewBox="0 0 550 260" style="background: #f5f0e4; border-radius: 8px;">
+                                <!-- Оси -->
+                                <line x1="60" y1="220" x2="520" y2="220" stroke="#5D0D18" stroke-width="2"/>
+                                <line x1="60" y1="20" x2="60" y2="220" stroke="#5D0D18" stroke-width="2"/>
+                                
+                                <!-- Стрелки -->
+                                <polygon points="520,216 530,220 520,224" fill="#5D0D18"/>
+                                <polygon points="56,20 60,10 64,20" fill="#5D0D18"/>
+                                
+                                <!-- Подписи осей -->
+                                <text x="290" y="250" text-anchor="middle" fill="#5D0D18" font-size="12" font-weight="bold">Δl, м</text>
+                                <text x="25" y="120" text-anchor="middle" fill="#5D0D18" font-size="12" font-weight="bold" transform="rotate(-90, 25, 120)">F, Н</text>
+                                
+                                <!-- Деления оси X (Δl) -->
+                                <line x1="132" y1="216" x2="132" y2="224" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="132" y="240" text-anchor="middle" fill="#5D0D18" font-size="10">0.002</text>
+                                
+                                <line x1="204" y1="216" x2="204" y2="224" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="204" y="240" text-anchor="middle" fill="#5D0D18" font-size="10">0.004</text>
+                                
+                                <line x1="276" y1="216" x2="276" y2="224" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="276" y="240" text-anchor="middle" fill="#5D0D18" font-size="10">0.006</text>
+                                
+                                <line x1="348" y1="216" x2="348" y2="224" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="348" y="240" text-anchor="middle" fill="#5D0D18" font-size="10">0.008</text>
+                                
+                                <line x1="420" y1="216" x2="420" y2="224" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="420" y="240" text-anchor="middle" fill="#5D0D18" font-size="10">0.010</text>
+                                
+                                <!-- Деления оси Y (F) -->
+                                <line x1="56" y1="184" x2="64" y2="184" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="52" y="188" text-anchor="end" fill="#5D0D18" font-size="10">0.78</text>
+                                
+                                <line x1="56" y1="148" x2="64" y2="148" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="52" y="152" text-anchor="end" fill="#5D0D18" font-size="10">1.57</text>
+                                
+                                <line x1="56" y1="112" x2="64" y2="112" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="52" y="116" text-anchor="end" fill="#5D0D18" font-size="10">2.35</text>
+                                
+                                <line x1="56" y1="76" x2="64" y2="76" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="52" y="80" text-anchor="end" fill="#5D0D18" font-size="10">3.14</text>
+                                
+                                <line x1="56" y1="40" x2="64" y2="40" stroke="#9FB2AC" stroke-width="1"/>
+                                <text x="52" y="44" text-anchor="end" fill="#5D0D18" font-size="10">3.92</text>
+                                
+                                <!-- Точки графика -->
+                                <circle cx="132" cy="184" r="4" fill="#5D0D18"/>
+                                <circle cx="204" cy="148" r="4" fill="#5D0D18"/>
+                                <circle cx="276" cy="112" r="4" fill="#5D0D18"/>
+                                <circle cx="348" cy="76" r="4" fill="#5D0D18"/>
+                                <circle cx="420" cy="40" r="4" fill="#5D0D18"/>
+                                
+                                <!-- Линия графика -->
+                                <polyline points="132,184 204,148 276,112 348,76 420,40" 
+                                    stroke="#5D0D18" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+                                
+                                <!-- Название -->
+                                <text x="290" y="35" text-anchor="middle" fill="#5D0D18" font-size="11" font-weight="bold">График F(Δl) — линейная зависимость</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📐</span>
+                        <h3>Результаты расчётов</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="result-box" id="resultBox">
+                            <p class="result-value">Доверительный интервал для k:</p>
+                            <p class="result-value">361 ≤ k ≤ 423 Н/м</p>
+                            <p class="result-value" style="margin-top: 15px;">Результат: k = 392 ± 31 Н/м</p>
+                            <div class="note">
+                                <strong>Примечание:</strong> Относительная погрешность ε<sub>k</sub> = 0.08 (8%)<br>
+                                Учтены погрешности: ε<sub>m</sub> = 2%, ε<sub>g</sub> = 1%, ε<sub>x</sub> = 5%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <footer class="footer">
+            <div class="footer-left">
+                <span class="footer-brand">КИПФИН</span>
+            </div>
+            <div class="footer-center">
+                <p>Лабораторный практикум · Изучение закона Гука</p>
+                <p class="footer-contacts">
+                    📧 <a href="mailto:melissaveyn@gmail.com">melissaveyn@gmail.com</a> · 
+                    📧 <a href="mailto:akotenkov899@gmail.com">akotenkov899@gmail.com</a>
+                </p>
+            </div>
+            <div class="footer-right">
+                <p>© 2026</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Константы
+        const MAX_WEIGHTS = 5;
+        const L0_CM = 5.6;
+        const MASS_PER_WEIGHT_KG = 0.08;
+        const G = 9.8;
+        const CM_PER_WEIGHT = 0.2;
+        
+        let currentWeightCount = 3;
+        
+        function updateInfoLabels() {
+            const lengthCm = L0_CM + (currentWeightCount * CM_PER_WEIGHT);
+            const stretchCm = currentWeightCount * CM_PER_WEIGHT;
+            const forceN = currentWeightCount * MASS_PER_WEIGHT_KG * G;
+            
+            document.getElementById('infoCount').textContent = currentWeightCount;
+            document.getElementById('infoLength').textContent = lengthCm.toFixed(2) + ' см';
+            document.getElementById('infoStretch').textContent = stretchCm.toFixed(2) + ' см';
+            document.getElementById('infoForce').textContent = forceN.toFixed(2) + ' Н';
+        }
+        
+        function changeWeight(delta) {
+            const newCount = Math.max(0, Math.min(MAX_WEIGHTS, currentWeightCount + delta));
+            if (newCount === currentWeightCount) return;
+            
+            currentWeightCount = newCount;
+            document.getElementById('weightCount').value = currentWeightCount;
+            updateInfoLabels();
+        }
+        
+        function acceptWeights() {
+            updateInfoLabels();
+            alert(`Принято: ${currentWeightCount} грузов\nДлина пружины: ${(L0_CM + currentWeightCount * CM_PER_WEIGHT).toFixed(2)} см\nСила упругости: ${(currentWeightCount * MASS_PER_WEIGHT_KG * G).toFixed(2)} Н`);
+        }
+        
+        function resetExperiment() {
+            currentWeightCount = 0;
+            document.getElementById('weightCount').value = 0;
+            updateInfoLabels();
+        }
+        
+        function showDescription() {
+            alert('Лабораторная работа: Сила упругости. Закон Гука\n\n' +
+                  'Цель работы: экспериментально проверить закон Гука и определить жесткость пружины.\n\n' +
+                  'Оборудование: штатив с муфтой и лапкой, пружина, набор грузов (5 шт по 80 г), линейка.\n\n' +
+                  'Основные формулы:\n' +
+                  '• Сила упругости: F = mg\n' +
+                  '• Удлинение: Δl = l - l₀\n' +
+                  '• Закон Гука: F = k·Δl → k = F/Δl\n' +
+                  '• Средняя жесткость: kср = (k₁ + k₂ + ... + k₅)/5\n' +
+                  '• Относительная погрешность: ε = εm + εg + εx = 0.02 + 0.01 + 0.05 = 0.08\n' +
+                  '• Абсолютная погрешность: Δk = ε·kср\n\n' +
+                  'Результат: k = kср ± Δk');
+        }
+        
+        // Инициализация
+        updateInfoLabels();
+    </script>
+</body>
+</html>
