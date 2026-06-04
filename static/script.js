@@ -2,7 +2,7 @@ const G = 9.8;
 const L = 10;
 const PATHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-// Секретные коды (как в Python версии)
+// Секретные коды
 const SECRET_CODES = {
     "2077": { name: "Cyberpunk 2077", color: "#00ff00", colorName: "неоново-зеленый" },
     "1337": { name: "LEET", color: "#ff00ff", colorName: "неоново-розовый" },
@@ -27,50 +27,61 @@ let rulerCode = [];
 let logoClickCount = 0;
 let logoClickTimer = null;
 
-const API_URL = '/api/calculate';
+// Для хранения измерений
+let measureTimes = [];
+let measurePaths = [];
+let measureSpeeds = [];
 
-async function calculateOnServer() {
-    try {
-        const payload = { alpha: alpha };
-        if (currentMode) {
-            payload.secret_code = currentMode.code;
-        }
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Ошибка сервера');
-        }
-        
-        const data = await response.json();
-        
-        a = data.a;
-        tMax = data.t_max;
-        tFull = data.t_full;
-        sFull = data.s_full;
-        vFull = data.v_full;
-        times = data.times;
-        speeds = data.speeds;
-        accels = data.accels;
-        
-        if (data.secret && !currentMode) {
-            activateSecretMode(data.secret.code || Object.keys(SECRET_CODES).find(k => SECRET_CODES[k].name === data.secret.name), data.secret);
-        }
-        
-        updateTable(-1);
-        updateCharts();
-        
-        return data;
-    } catch (error) {
-        console.error('API Error:', error);
-        alert('Ошибка подключения к серверу: ' + error.message);
-        return null;
+// ЛОКАЛЬНЫЙ РАСЧЕТ
+function calculateLocally() {
+    console.log("Calculating locally for alpha:", alpha);
+    
+    const alphaRad = alpha * Math.PI / 180;
+    a = G * Math.sin(alphaRad);
+    
+    if (a > 0) {
+        tMax = Math.sqrt(2 * L / a);
+    } else {
+        tMax = 20.0;
     }
+    
+    console.log("a =", a, "tMax =", tMax);
+    
+    // Генерируем точки для графиков
+    tFull = [];
+    sFull = [];
+    vFull = [];
+    
+    for (let t = 0; t <= tMax + 0.01; t += 0.01) {
+        tFull.push(parseFloat(t.toFixed(4)));
+        sFull.push(parseFloat((0.5 * a * t * t).toFixed(6)));
+        vFull.push(parseFloat((a * t).toFixed(6)));
+    }
+    
+    // Вычисляем теоретические времена для каждого пути
+    times = [];
+    speeds = [];
+    accels = [];
+    
+    for (const pathS of PATHS) {
+        if (pathS > L) continue;
+        if (a > 0 && pathS > 0) {
+            const tVal = Math.sqrt(2 * pathS / a);
+            times.push(parseFloat(tVal.toFixed(4)));
+            speeds.push(parseFloat((a * tVal).toFixed(4)));
+            accels.push(parseFloat((2 * pathS / (tVal * tVal)).toFixed(4)));
+        } else {
+            times.push(0);
+            speeds.push(0);
+            accels.push(0);
+        }
+    }
+    
+    console.log("Times calculated:", times);
+    
+    updateCharts();
+    
+    return { a, tMax, times };
 }
 
 function activateSecretMode(code, secretInfo) {
@@ -82,24 +93,23 @@ function activateSecretMode(code, secretInfo) {
     };
     currentColor = secretInfo.color;
     
-    // Показываем бейдж с режимом
     const modeBadge = document.getElementById('modeBadge');
     const modeName = document.getElementById('modeName');
-    modeName.textContent = `🎮 Режим: ${secretInfo.name} (${secretInfo.colorName} шарик)`;
-    modeBadge.style.display = 'block';
-    modeBadge.style.background = secretInfo.color;
-    modeBadge.style.color = '#000';
+    if (modeBadge) {
+        modeName.textContent = `🎮 Режим: ${secretInfo.name} (${secretInfo.colorName} шарик)`;
+        modeBadge.style.display = 'block';
+        modeBadge.style.background = secretInfo.color;
+        modeBadge.style.color = '#000';
+        
+        modeBadge.style.animation = 'none';
+        setTimeout(() => {
+            modeBadge.style.animation = 'pulse 1s ease-in-out';
+        }, 10);
+    }
     
-    // Анимация появления
-    modeBadge.style.animation = 'none';
-    setTimeout(() => {
-        modeBadge.style.animation = 'pulse 1s ease-in-out';
-    }, 10);
-    
-    // Перерисовываем схему с новым цветом
     redraw();
     
-    alert(`🔓 Секретный код ${code} активирован!\nРежим: ${secretInfo.name}\nЦвет шарика изменен на ${secretInfo.colorName}.\nНаслаждайтесь экспериментом!`);
+    alert(`🔓 Секретный код ${code} активирован!\nРежим: ${secretInfo.name}\nЦвет шарика изменен на ${secretInfo.colorName}.`);
 }
 
 function checkSecretCode() {
@@ -110,7 +120,6 @@ function checkSecretCode() {
             rulerCode = [];
             return true;
         }
-        // Если код не подошел, удаляем первый символ и продолжаем
         if (rulerCode.length === 4) {
             rulerCode.shift();
         }
@@ -120,23 +129,19 @@ function checkSecretCode() {
 
 function onRulerNumberClick(number) {
     rulerCode.push(number.toString());
-    
-    // Визуальная обратная связь
     const canvas = document.getElementById('schemeCanvas');
-    canvas.style.transform = 'scale(0.99)';
-    setTimeout(() => { canvas.style.transform = 'scale(1)'; }, 100);
-    
+    if (canvas) {
+        canvas.style.transform = 'scale(0.99)';
+        setTimeout(() => { canvas.style.transform = 'scale(1)'; }, 100);
+    }
     checkSecretCode();
 }
 
 function onLogoClick() {
     if (logoClickTimer) clearTimeout(logoClickTimer);
-    
     logoClickCount++;
-    
     if (logoClickCount >= 3) {
         logoClickCount = 0;
-        // Показываем "секретную анимацию" - просто уведомление для веб-версии
         alert('🦊 Wolf.Fox приветствует вас!\nСекрет: нажмите на числа на линейке (0-10) в правильной последовательности!');
     } else {
         logoClickTimer = setTimeout(() => {
@@ -145,40 +150,112 @@ function onLogoClick() {
     }
 }
 
-function updateTable(highlightIdx = -1) {
-    let timeHtml = '<td><strong>Время t,с</strong></td>';
-    let speedHtml = '<td><strong>Скорость v,м/с</strong></td>';
-    let accelHtml = '<td><strong>Ускорение a,м/с²</strong></td>';
-    
+// ОБНОВЛЕНИЕ ТАБЛИЦЫ С ДАННЫМИ ИЗМЕРЕНИЙ
+function updateTable() {
     for (let i = 0; i < 10; i++) {
-        if (i < times.length) {
-            const highlight = highlightIdx === i ? ' class="highlight"' : '';
-            timeHtml += `<td${highlight}>${times[i].toFixed(2)}</td>`;
-            speedHtml += `<td${highlight}>${speeds[i].toFixed(2)}</td>`;
-            accelHtml += `<td${highlight}>${accels[i].toFixed(4)}</td>`;
-        } else {
-            timeHtml += '<td>---</td>';
-            speedHtml += '<td>---</td>';
-            accelHtml += '<td>---</td>';
+        const timeLabel = document.getElementById(`time_${i}`);
+        const speedLabel = document.getElementById(`speed_${i}`);
+        const accelLabel = document.getElementById(`accel_${i}`);
+        
+        if (timeLabel && speedLabel && accelLabel) {
+            // Проверяем, есть ли измерение для этого пути
+            const index = measurePaths.indexOf(PATHS[i]);
+            if (index !== -1) {
+                timeLabel.textContent = measureTimes[index].toFixed(3);
+                timeLabel.style.color = '#ea580c';
+                timeLabel.style.fontWeight = 'bold';
+                speedLabel.textContent = measureSpeeds[index].toFixed(3);
+                speedLabel.style.color = '#ea580c';
+                speedLabel.style.fontWeight = 'bold';
+                accelLabel.textContent = a.toFixed(4);
+                accelLabel.style.color = '#16a34a';
+                accelLabel.style.fontWeight = 'bold';
+            } else {
+                timeLabel.textContent = '---';
+                timeLabel.style.color = '#888';
+                timeLabel.style.fontWeight = 'normal';
+                speedLabel.textContent = '---';
+                speedLabel.style.color = '#888';
+                speedLabel.style.fontWeight = 'normal';
+                accelLabel.textContent = '---';
+                accelLabel.style.color = '#888';
+                accelLabel.style.fontWeight = 'normal';
+            }
         }
     }
+}
+
+// ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ (создание ячеек)
+function initTable() {
+    const tableContainer = document.querySelector('.table-container');
+    if (!tableContainer) return;
     
-    document.getElementById('rowTime').innerHTML = timeHtml;
-    document.getElementById('rowSpeed').innerHTML = speedHtml;
-    document.getElementById('rowAccel').innerHTML = accelHtml;
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Путь s, м</th>
+                    ${PATHS.map(s => `<th>${s}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Время t, с</strong></td>
+                    ${PATHS.map((_, i) => `<td id="time_${i}">---</td>`).join('')}
+                </tr>
+                <tr>
+                    <td><strong>Скорость v, м/с</strong></td>
+                    ${PATHS.map((_, i) => `<td id="speed_${i}">---</td>`).join('')}
+                </tr>
+                <tr>
+                    <td><strong>Ускорение a, м/с²</strong></td>
+                    ${PATHS.map((_, i) => `<td id="accel_${i}">---</td>`).join('')}
+                </tr>
+            </tbody>
+        </table>
+    `;
+    
+    tableContainer.innerHTML = html;
+}
+
+function clearTableData() {
+    measureTimes = [];
+    measurePaths = [];
+    measureSpeeds = [];
+    for (let i = 0; i < 10; i++) {
+        const timeLabel = document.getElementById(`time_${i}`);
+        const speedLabel = document.getElementById(`speed_${i}`);
+        const accelLabel = document.getElementById(`accel_${i}`);
+        if (timeLabel) {
+            timeLabel.textContent = '---';
+            timeLabel.style.color = '#888';
+            timeLabel.style.fontWeight = 'normal';
+        }
+        if (speedLabel) {
+            speedLabel.textContent = '---';
+            speedLabel.style.color = '#888';
+            speedLabel.style.fontWeight = 'normal';
+        }
+        if (accelLabel) {
+            accelLabel.textContent = '---';
+            accelLabel.style.color = '#888';
+            accelLabel.style.fontWeight = 'normal';
+        }
+    }
 }
 
 const canvas = document.getElementById('schemeCanvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas ? canvas.getContext('2d') : null;
 
 function drawScheme() {
+    if (!ctx) return;
+    
     const W = canvas.width, H = canvas.height;
     const rad = alpha * Math.PI / 180;
     railLen = Math.min(W - 120, 380);
     
     ctx.clearRect(0, 0, W, H);
     
-    // Фон с легкой текстурой
     ctx.fillStyle = '#e8e8e8';
     ctx.fillRect(0, 0, W, H);
     
@@ -187,11 +264,11 @@ function drawScheme() {
     ex = sx + railLen * Math.cos(rad);
     ey = sy + railLen * Math.sin(rad);
     
-    // Тень под желобом
+    // Тень
     ctx.shadowColor = 'rgba(0,0,0,0.2)';
     ctx.shadowBlur = 4;
     
-    // Основной желоб
+    // Желоб
     ctx.strokeStyle = '#9e9e9e';
     ctx.lineWidth = 16;
     ctx.beginPath();
@@ -199,7 +276,6 @@ function drawScheme() {
     ctx.lineTo(ex, ey);
     ctx.stroke();
     
-    // Блестящие края
     ctx.strokeStyle = '#e0e0e0';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -215,7 +291,6 @@ function drawScheme() {
     
     ctx.shadowBlur = 0;
     
-    // Центральная линия
     ctx.strokeStyle = '#616161';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -223,13 +298,12 @@ function drawScheme() {
     ctx.lineTo(ex, ey);
     ctx.stroke();
     
-    // Деления линейки (с возможностью клика)
+    // Деления линейки
     for (let i = 0; i <= 10; i++) {
         const t = i / 10;
         const x = sx + railLen * t * Math.cos(rad);
         const y = sy + railLen * t * Math.sin(rad);
         
-        // Черточка
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -237,15 +311,6 @@ function drawScheme() {
         ctx.lineTo(x, y + 15);
         ctx.stroke();
         
-        // Подсветка
-        ctx.strokeStyle = '#95a5a6';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x - 1, y - 14);
-        ctx.lineTo(x - 1, y + 14);
-        ctx.stroke();
-        
-        // Промежуточные деления (0.5 м)
         if (i < 10) {
             const midT = t + 0.05;
             const midX = sx + railLen * midT * Math.cos(rad);
@@ -258,19 +323,16 @@ function drawScheme() {
             ctx.stroke();
         }
         
-        // Цифры с эффектом
         const numberText = i.toString();
         let textX = x, textY = y - 22;
         if (i === 0) textX = x - 1;
         if (i === 10) textX = x + 1;
         
-        // Тень цифры
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(numberText, textX + 1, textY + 1);
         
-        // Цифра
         ctx.fillStyle = '#2c3e50';
         ctx.fillText(numberText, textX, textY);
     }
@@ -296,7 +358,6 @@ function drawScheme() {
     ctx.arc(ex, ey, 3, 0, Math.PI * 2);
     ctx.fill();
     
-    // Блик
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(ex - 5, ey - 6, 3, 0, Math.PI * 2);
@@ -310,20 +371,19 @@ function drawScheme() {
     ctx.shadowBlur = 0;
     
     // Заголовок
-    let titleText = `Линейка (α = ${alpha.toFixed(1)}°, L = ${L} м)`;
     if (currentMode) titleText += ` | Режим: ${currentMode.name}`;
     
     ctx.fillStyle = '#d5d8dc';
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 1;
-    ctx.fillRect(canvas.width/2 - 150, 45, 300, 30);
-    ctx.strokeRect(canvas.width/2 - 150, 45, 300, 30);
+    ctx.fillRect(W/2 - 150, 45, 300, 30);
+    ctx.strokeRect(W/2 - 150, 45, 300, 30);
     
     ctx.fillStyle = '#2c3e50';
     ctx.font = 'bold 10px Arial';
-    ctx.fillText(titleText, canvas.width/2, 65);
+    ctx.fillText(titleText, W/2, 65);
     
-    // Сохраняем координаты для кликов по цифрам
+    // Сохраняем координаты для кликов
     window.rulerClickAreas = [];
     for (let i = 0; i <= 10; i++) {
         const t = i / 10;
@@ -334,7 +394,7 @@ function drawScheme() {
 }
 
 function drawBall(x, y) {
-    // Рисуем шарик с градиентом
+    if (!ctx) return;
     const radius = 12;
     const gradient = ctx.createRadialGradient(x - 4, y - 4, 3, x, y, radius);
     gradient.addColorStop(0, currentColor);
@@ -346,7 +406,6 @@ function drawBall(x, y) {
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Блик
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.beginPath();
     ctx.arc(x - 4, y - 4, 4, 0, Math.PI * 2);
@@ -359,45 +418,69 @@ function redraw() {
     drawScheme();
     if (window.currentBallX !== undefined && window.currentBallY !== undefined) {
         drawBall(window.currentBallX, window.currentBallY);
-    } else {
+    } else if (sx !== undefined && sy !== undefined) {
         drawBall(sx, sy);
     }
 }
 
-// Обработчик кликов по канвасу для секретного кода
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const mouseX = (e.clientX - rect.left) * scaleX;
-    const mouseY = (e.clientY - rect.top) * scaleY;
-    
-    if (window.rulerClickAreas) {
-        for (const area of window.rulerClickAreas) {
-            const dx = mouseX - area.x;
-            const dy = mouseY - area.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 20) {
-                onRulerNumberClick(area.number);
-                break;
+// Обработчик кликов по канвасу
+if (canvas) {
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+        
+        if (window.rulerClickAreas) {
+            for (const area of window.rulerClickAreas) {
+                const dx = mouseX - area.x;
+                const dy = mouseY - area.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 20) {
+                    onRulerNumberClick(area.number);
+                    break;
+                }
             }
         }
-    }
-});
+    });
+}
 
-async function startExperiment() {
+// ЗАПУСК ЭКСПЕРИМЕНТА
+function startExperiment() {
     if (expRun) return;
-    await calculateOnServer();
+    
+    calculateLocally();
+    
+    if (a === 0 || tMax === 0) {
+        alert('Ошибка: ускорение равно 0. Увеличьте угол наклона (сейчас α = ' + alpha + '°)');
+        return;
+    }
+    
+    console.log("Starting experiment: a=" + a + ", tMax=" + tMax);
+    
+    // Очищаем предыдущие измерения
+    measureTimes = [];
+    measurePaths = [];
+    measureSpeeds = [];
+    clearTableData();
+    
     expTime = 0;
     expIdx = 0;
     expRun = true;
-    updateTable(-1);
     animate();
 }
 
+// АНИМАЦИЯ
 function animate() {
     if (!expRun) return;
+    
+    if (a === 0 || tMax === 0 || typeof sx === 'undefined') {
+        console.error("Invalid animation state:", {a, tMax, sx});
+        expRun = false;
+        return;
+    }
     
     if (expTime <= tMax) {
         let s = 0.5 * a * expTime * expTime;
@@ -406,18 +489,32 @@ function animate() {
         const t = Math.min(s / L, 1);
         const rad = alpha * Math.PI / 180;
         
-        window.currentBallX = sx + railLen * t * Math.cos(rad);
-        window.currentBallY = sy + railLen * t * Math.sin(rad);
+        const ballX = sx + railLen * t * Math.cos(rad);
+        const ballY = sy + railLen * t * Math.sin(rad);
+        
+        window.currentBallX = ballX;
+        window.currentBallY = ballY;
+        
         redraw();
         
         document.getElementById('infoTime').textContent = 't=' + expTime.toFixed(2) + 'с';
         document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
         
-        for (let i = expIdx; i < PATHS.length; i++) {
-            if (s >= PATHS[i] - 0.05) {
-                expIdx = i + 1;
-                updateTable(i);
+        // ЗАПИСЬ ИЗМЕРЕНИЙ ПРИ ДОСТИЖЕНИИ ПУТИ
+        for (let i = 0; i < PATHS.length; i++) {
+            const targetS = PATHS[i];
+            // Проверяем, достигли ли пути и еще не записали его
+            if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
+                measureTimes.push(expTime);
+                measurePaths.push(targetS);
+                measureSpeeds.push(v);
+                
+                console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с, скорость ${v.toFixed(3)}м/с`);
+                
+                // Обновляем таблицу
+                updateTable();
+                break;
             }
         }
         
@@ -425,26 +522,57 @@ function animate() {
         animId = requestAnimationFrame(animate);
     } else {
         expRun = false;
-        updateTable(9);
+        if (animId) cancelAnimationFrame(animId);
+        
         document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
         document.getElementById('infoPath').textContent = 's=' + L.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + (a * tMax).toFixed(2) + 'м/с';
+        
         alert('Финиш!\nВремя: ' + tMax.toFixed(2) + 'с\nУскорение: ' + a.toFixed(4) + 'м/с²');
     }
 }
 
 function resetExperiment() {
     expRun = false;
-    if (animId) cancelAnimationFrame(animId);
+    if (animId) {
+        cancelAnimationFrame(animId);
+        animId = null;
+    }
     expTime = 0;
     expIdx = 0;
+    
+    measureTimes = [];
+    measurePaths = [];
+    measureSpeeds = [];
+    
     window.currentBallX = sx;
     window.currentBallY = sy;
     redraw();
+    
     document.getElementById('infoTime').textContent = 't=0.00с';
     document.getElementById('infoPath').textContent = 's=0.00м';
     document.getElementById('infoSpeed').textContent = 'v=0.00м/с';
-    updateTable(-1);
+    
+    clearTableData();
+    clearPlots();
+}
+
+function clearPlots() {
+    if (chartST) {
+        chartST.data.datasets[0].data = [];
+        chartST.data.datasets[1].data = [];
+        chartST.update();
+    }
+    if (chartVT) {
+        chartVT.data.datasets[0].data = [];
+        chartVT.data.datasets[1].data = [];
+        chartVT.update();
+    }
+    if (chartAT) {
+        chartAT.data.datasets[0].data = [];
+        chartAT.data.datasets[1].data = [];
+        chartAT.update();
+    }
 }
 
 function createCharts() {
@@ -455,53 +583,67 @@ function createCharts() {
         scales: { x: { title: { display: true, text: 't, с' } }, y: { title: { display: true, text: '' }, min: 0 } }
     };
     
-    chartST = new Chart(document.getElementById('chartST'), {
-        type: 'scatter',
-        data: { datasets: [
-            { label: 'Теория s(t)', data: [], borderColor: '#2563eb', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
-            { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 5, showLine: false }
-        ] },
-        options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 's, м' }, min: 0, max: L + 1 } } }
-    });
+    const ctxST = document.getElementById('chartST')?.getContext('2d');
+    const ctxVT = document.getElementById('chartVT')?.getContext('2d');
+    const ctxAT = document.getElementById('chartAT')?.getContext('2d');
     
-    chartVT = new Chart(document.getElementById('chartVT'), {
-        type: 'scatter',
-        data: { datasets: [
-            { label: 'Теория v(t)', data: [], borderColor: '#eab308', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
-            { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 5, showLine: false }
-        ] },
-        options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 'v, м/с' }, min: 0 } } }
-    });
+    if (ctxST) {
+        chartST = new Chart(ctxST, {
+            type: 'scatter',
+            data: { datasets: [
+                { label: 'Теория s(t)', data: [], borderColor: '#2563eb', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
+                { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 6, showLine: false }
+            ] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 's, м' }, min: 0, max: L + 1 } } }
+        });
+    }
     
-    chartAT = new Chart(document.getElementById('chartAT'), {
-        type: 'scatter',
-        data: { datasets: [
-            { label: 'Теория a(t)', data: [], borderColor: '#16a34a', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
-            { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 5, showLine: false }
-        ] },
-        options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 'a, м/с²' }, min: 0 } } }
-    });
+    if (ctxVT) {
+        chartVT = new Chart(ctxVT, {
+            type: 'scatter',
+            data: { datasets: [
+                { label: 'Теория v(t)', data: [], borderColor: '#eab308', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
+                { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 6, showLine: false }
+            ] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 'v, м/с' }, min: 0 } } }
+        });
+    }
+    
+    if (ctxAT) {
+        chartAT = new Chart(ctxAT, {
+            type: 'scatter',
+            data: { datasets: [
+                { label: 'Теория a(t)', data: [], borderColor: '#16a34a', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, showLine: true, tension: 0 },
+                { label: 'Точки измерений', data: [], borderColor: '#ea580c', backgroundColor: '#ea580c', borderWidth: 0, pointRadius: 6, showLine: false }
+            ] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { text: 'a, м/с²' }, min: 0 } } }
+        });
+    }
 }
 
 function updateCharts() {
-    if (!chartST) return;
+    if (!chartST || !chartVT || !chartAT) return;
     
+    // Теоретические кривые
     const sData = tFull.map((t, i) => ({ x: t, y: sFull[i] }));
-    const measureData = times.map((t, i) => ({ x: t, y: PATHS[i] }));
-    chartST.data.datasets[0].data = sData;
-    chartST.data.datasets[1].data = measureData;
-    chartST.update();
-    
     const vData = tFull.map((t, i) => ({ x: t, y: vFull[i] }));
-    const speedData = times.map((t, i) => ({ x: t, y: speeds[i] }));
-    chartVT.data.datasets[0].data = vData;
-    chartVT.data.datasets[1].data = speedData;
-    chartVT.update();
-    
     const aData = tFull.map(t => ({ x: t, y: a }));
-    const accelData = times.map((t, i) => ({ x: t, y: accels[i] }));
+    
+    chartST.data.datasets[0].data = sData;
+    chartVT.data.datasets[0].data = vData;
     chartAT.data.datasets[0].data = aData;
-    chartAT.data.datasets[1].data = accelData;
+    
+    // Точки измерений
+    const measureDataST = measureTimes.map((t, i) => ({ x: t, y: measurePaths[i] }));
+    const measureDataVT = measureTimes.map((t, i) => ({ x: t, y: measureSpeeds[i] }));
+    const measureDataAT = measureTimes.map((t, i) => ({ x: t, y: a }));
+    
+    chartST.data.datasets[1].data = measureDataST;
+    chartVT.data.datasets[1].data = measureDataVT;
+    chartAT.data.datasets[1].data = measureDataAT;
+    
+    chartST.update();
+    chartVT.update();
     chartAT.update();
     
     if (tMax > 0) {
@@ -516,29 +658,51 @@ function updateCharts() {
     }
 }
 
-// Инициализация
-document.getElementById('btnSet').onclick = async () => {
-    const v = parseFloat(document.getElementById('angleInput').value);
-    if (isNaN(v) || v < 0 || v > 10) {
-        alert('Угол должен быть от 0° до 10°!');
+function buildGraphs() {
+    if (measureTimes.length === 0) {
+        alert('Нет данных для построения графиков. Сначала проведите эксперимент (нажмите ПУСК)!');
         return;
     }
-    alpha = v;
-    await calculateOnServer();
-    updateTable(-1);
-    redraw();
-    resetExperiment();
-    alert(`α=${alpha.toFixed(1)}°\na=${a.toFixed(4)}м/с²\nt=${tMax.toFixed(2)}с`);
-};
+    updateCharts();
+    alert(`Построено ${measureTimes.length} экспериментальных точек`);
+}
 
-document.getElementById('btnStart').onclick = startExperiment;
-document.getElementById('btnReset').onclick = resetExperiment;
-
-document.getElementById('leftLogo').onclick = onLogoClick;
-
-createCharts();
-calculateOnServer().then(() => {
+// ИНИЦИАЛИЗАЦИЯ
+document.addEventListener('DOMContentLoaded', () => {
+    initTable();
+    createCharts();
+    calculateLocally();
     redraw();
     window.currentBallX = sx;
     window.currentBallY = sy;
+    
+    // Назначаем обработчики кнопок
+    const btnSet = document.getElementById('btnSet');
+    const btnStart = document.getElementById('btnStart');
+    const btnReset = document.getElementById('btnReset');
+    const btnBuild = document.getElementById('btnBuild');
+    const leftLogo = document.getElementById('leftLogo');
+    const angleInput = document.getElementById('angleInput');
+    
+    if (btnSet) {
+        btnSet.onclick = () => {
+            const v = parseFloat(angleInput?.value || 6);
+            if (isNaN(v) || v < 0 || v > 10) {
+                alert('Угол должен быть от 0° до 10°!');
+                return;
+            }
+            alpha = v;
+            calculateLocally();
+            redraw();
+            resetExperiment();
+            alert(`α=${alpha.toFixed(1)}°\na=${a.toFixed(4)}м/с²\nt=${tMax.toFixed(2)}с`);
+        };
+    }
+    
+    if (btnStart) btnStart.onclick = startExperiment;
+    if (btnReset) btnReset.onclick = resetExperiment;
+    if (btnBuild) btnBuild.onclick = buildGraphs;
+    if (leftLogo) leftLogo.onclick = onLogoClick;
+    
+    console.log("Initialized with alpha=" + alpha + ", a=" + a + ", tMax=" + tMax);
 });
