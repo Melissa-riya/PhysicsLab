@@ -253,9 +253,7 @@ function drawScheme() {
     const W = canvas.width, H = canvas.height;
     const rad = alpha * Math.PI / 180;
     railLen = Math.min(W - 120, 380);
-    
-    ctx.clearRect(0, 0, W, H);
-    
+        
     
     sx = 60;
     sy = 50;
