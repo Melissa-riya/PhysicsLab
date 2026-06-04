@@ -4,9 +4,6 @@
     {
       "src": "api/calculate.py",
       "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9"
-      }
     },
     {
       "src": "static/**",
@@ -27,4 +24,3 @@
       "dest": "/static/$1"
     }
   ]
-}
