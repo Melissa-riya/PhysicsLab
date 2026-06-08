@@ -376,12 +376,12 @@ function drawScheme() {
     ctx.fillStyle = '#d5d8dc';
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 1;
-    ctx.fillRect(W/2 - 150, 275, 300, 30);
-    ctx.strokeRect(W/2 - 150, 275, 300, 30);
+    ctx.fillRect(W/2 - 150, 215, 300, 30);
+    ctx.strokeRect(W/2 - 150, 215, 300, 30);
     
     ctx.fillStyle = '#2c3e50';
     ctx.font = 'bold 10px Arial';
-    ctx.fillText(titleText, W/2, 200);
+    ctx.fillText(titleText, W/2, 255);
     
     // Сохраняем координаты для кликов
     window.rulerClickAreas = [];
