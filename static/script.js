@@ -513,7 +513,16 @@ function animate() {
                 break;
             }
         }
-        
+
+
+    if (!measurePaths.includes(10) && s >= 9.95) {
+        measureTimes.push(expTime);
+        measurePaths.push(10);
+        measureSpeeds.push(v);
+        console.log(`Измерение: путь 10м (финиш), время ${expTime.toFixed(3)}с`);
+        updateTable();
+    }
+            
         expTime += 0.03;
         animId = requestAnimationFrame(animate);
     } else {
