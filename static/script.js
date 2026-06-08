@@ -509,14 +509,13 @@ function animate() {
                 measurePaths.push(targetS);
                 measureSpeeds.push(v);
                 console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с`);
-                updateTable();  // Это вызывает перерисовку таблицы, но редко
+                updateTable();  // Это вызывает перерисовку таблицы
                 updateCharts(); // Обновление графиков только при новом измерении
                 break;
             }
         }
         
-        // ПЛАВНЫЙ ШАГ (уменьшил для большей плавности)
-        expTime += 0.04;  // было 0.03, стало 0.02 - плавнее
+        expTime += 0.01; 
         
         animId = requestAnimationFrame(animate);
     } else {
@@ -531,8 +530,11 @@ function animate() {
             measureTimes.push(tMax);
             measurePaths.push(10);
             measureSpeeds.push(finalV);
+
+        requestAnimationFrame(() => {
             updateTable();
             updateCharts();
+
         }
         
         document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
