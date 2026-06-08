@@ -420,68 +420,108 @@ function startExperiment() {
     animate();
 }
 
-// ГЛАВНОЕ - ПРАВИЛЬНАЯ АНИМАЦИЯ
+// ИСПРАВЛЕННАЯ АНИМАЦИЯ - ПЛАВНЫЙ ФИНИШ
 function animate() {
     if (!expRun) return;
     
-    if (expTime <= tMax) {
-        let s = 0.5 * a * expTime * expTime;
-        if (s > L) s = L;
-        const v = a * expTime;
-        const t = Math.min(s / L, 1);
-        const rad = alpha * Math.PI / 180;
-        
-        const ballX = sx + railLen * t * Math.cos(rad);
-        const ballY = sy + railLen * t * Math.sin(rad);
-        
-        window.currentBallX = ballX;
-        window.currentBallY = ballY;
-        redraw();
-        
-        document.getElementById('infoTime').textContent = 't=' + expTime.toFixed(2) + 'с';
-        document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
-        document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
-        
-        for (let i = 0; i < PATHS.length; i++) {
-            const targetS = PATHS[i];
-            if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
-                measureTimes.push(expTime);
-                measurePaths.push(targetS);
-                measureSpeeds.push(v);
-                updateTable();
-                break;
-            }
-        }
-        
-        expTime += 0.03;
-        animId = requestAnimationFrame(animate);
-    } else {
-        expRun = false;
-        if (animId) cancelAnimationFrame(animId);
-        
-        if (!measurePaths.includes(10)) {
-            measureTimes.push(tMax);
-            measurePaths.push(10);
-            measureSpeeds.push(a * tMax);
-            updateTable();
-        }
-        
-        document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
-        document.getElementById('infoPath').textContent = 's=' + L.toFixed(2) + 'м';
-        document.getElementById('infoSpeed').textContent = 'v=' + (a * tMax).toFixed(2) + 'м/с';
-        alert('Финиш!\nВремя: ' + tMax.toFixed(2) + 'с\nУскорение: ' + a.toFixed(4) + 'м/с²');
+    let nextTime = expTime + 0.03;
+    let isFinishing = false;
+    
+    // Проверяем, достигнем ли мы финиша на следующем шаге
+    if (nextTime >= tMax) {
+        nextTime = tMax;
+        isFinishing = true;
     }
+    
+    // Рассчитываем позицию
+    let s = 0.5 * a * nextTime * nextTime;
+    if (s > L) s = L;
+    const v = a * nextTime;
+    if (v < 0) v = 0;
+    const t = s / L;
+    const rad = alpha * Math.PI / 180;
+    
+    const ballX = sx + railLen * t * Math.cos(rad);
+    const ballY = sy + railLen * t * Math.sin(rad);
+    
+    window.currentBallX = ballX;
+    window.currentBallY = ballY;
+    redraw();
+    
+    document.getElementById('infoTime').textContent = 't=' + nextTime.toFixed(2) + 'с';
+    document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
+    document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
+    
+    // Записываем измерения для пройденных путей
+    for (let i = 0; i < PATHS.length; i++) {
+        const targetS = PATHS[i];
+        if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
+            measureTimes.push(nextTime);
+            measurePaths.push(targetS);
+            measureSpeeds.push(v);
+            updateTable();
+            break;
+        }
+    }
+    
+    expTime = nextTime;
+    
+    if (isFinishing || expTime >= tMax) {
+        // Плавно завершаем анимацию
+        finishExperiment();
+    } else {
+        animId = requestAnimationFrame(animate);
+    }
+}
+
+function finishExperiment() {
+    expRun = false;
+    if (animId) {
+        cancelAnimationFrame(animId);
+        animId = null;
+    }
+    
+    // Принудительно устанавливаем шарик в конечную точку
+    const rad = alpha * Math.PI / 180;
+    const finalX = sx + railLen * Math.cos(rad);
+    const finalY = sy + railLen * Math.sin(rad);
+    window.currentBallX = finalX;
+    window.currentBallY = finalY;
+    
+    // Принудительно добавляем путь 10м, если его нет
+    if (!measurePaths.includes(10)) {
+        measureTimes.push(tMax);
+        measurePaths.push(10);
+        measureSpeeds.push(a * tMax);
+        updateTable();
+    }
+    
+    redraw();
+    
+    document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
+    document.getElementById('infoPath').textContent = 's=' + L.toFixed(2) + 'м';
+    document.getElementById('infoSpeed').textContent = 'v=' + (a * tMax).toFixed(2) + 'м/с';
+    
+    // Небольшая задержка перед alert, чтобы анимация успела завершиться
+    setTimeout(() => {
+        alert('Финиш!\nВремя: ' + tMax.toFixed(2) + 'с\nУскорение: ' + a.toFixed(4) + 'м/с²');
+    }, 50);
 }
 
 function resetExperiment() {
     expRun = false;
-    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    if (animId) { 
+        cancelAnimationFrame(animId); 
+        animId = null; 
+    }
     expTime = 0;
     measureTimes = [];
     measurePaths = [];
     measureSpeeds = [];
-    window.currentBallX = sx;
-    window.currentBallY = sy;
+    if (sx !== undefined && sy !== undefined) {
+        window.currentBallX = sx;
+        window.currentBallY = sy;
+    }
     redraw();
     document.getElementById('infoTime').textContent = 't=0.00с';
     document.getElementById('infoPath').textContent = 's=0.00м';
