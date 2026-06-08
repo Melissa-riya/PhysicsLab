@@ -471,7 +471,6 @@ function startExperiment() {
 }
 
 // АНИМАЦИЯ
-// АНИМАЦИЯ (плавная)
 function animate() {
     if (!expRun) return;
     
@@ -517,7 +516,7 @@ function animate() {
         }
         
         // ПЛАВНЫЙ ШАГ (уменьшил для большей плавности)
-        expTime += 0.02;  // было 0.03, стало 0.02 - плавнее
+        expTime += 0.04;  // было 0.03, стало 0.02 - плавнее
         
         animId = requestAnimationFrame(animate);
     } else {
