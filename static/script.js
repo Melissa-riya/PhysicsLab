@@ -18,7 +18,7 @@ let alpha = 6;
 let a = 0, tMax = 0;
 let tFull = [], sFull = [], vFull = [];
 let times = [], speeds = [], accels = [];
-let animId = null, expTime = 0, expRun = false, expIdx = 0;
+let animId = null, expTime = 0, expRun = false;
 let sx, sy, ex, ey, railLen;
 let chartST, chartVT, chartAT;
 let currentColor = "#ef4444";
@@ -150,7 +150,7 @@ function onLogoClick() {
     }
 }
 
-// ОБНОВЛЕНИЕ ТАБЛИЦЫ С ДАННЫМИ ИЗМЕРЕНИЙ
+// ОБНОВЛЕНИЕ ТАБЛИЦЫ
 function updateTable() {
     for (let i = 0; i < 10; i++) {
         const timeLabel = document.getElementById(`time_${i}`);
@@ -158,7 +158,6 @@ function updateTable() {
         const accelLabel = document.getElementById(`accel_${i}`);
         
         if (timeLabel && speedLabel && accelLabel) {
-            // Проверяем, есть ли измерение для этого пути
             const index = measurePaths.indexOf(PATHS[i]);
             if (index !== -1) {
                 timeLabel.textContent = measureTimes[index].toFixed(3);
@@ -185,7 +184,7 @@ function updateTable() {
     }
 }
 
-// ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ (создание ячеек)
+// ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ
 function initTable() {
     const tableContainer = document.querySelector('.table-container');
     if (!tableContainer) return;
@@ -245,7 +244,7 @@ function clearTableData() {
 }
 
 const canvas = document.getElementById('schemeCanvas');
-let ctx = canvas ? canvas.getContext('2d') : null;
+const ctx = canvas ? canvas.getContext('2d') : null;
 
 function drawScheme() {
     if (!ctx) return;
@@ -253,7 +252,10 @@ function drawScheme() {
     const W = canvas.width, H = canvas.height;
     const rad = alpha * Math.PI / 180;
     railLen = Math.min(W - 120, 380);
-        
+    
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillRect(0, 0, W, H);
     
     sx = 60;
     sy = 50;
@@ -367,6 +369,7 @@ function drawScheme() {
     ctx.shadowBlur = 0;
     
     // Заголовок
+    let titleText = `Линейка (α = ${alpha.toFixed(1)}°, L = ${L} м)`;
     if (currentMode) titleText += ` | Режим: ${currentMode.name}`;
     
     ctx.fillStyle = '#d5d8dc';
@@ -456,14 +459,12 @@ function startExperiment() {
     
     console.log("Starting experiment: a=" + a + ", tMax=" + tMax);
     
-    // Очищаем предыдущие измерения
     measureTimes = [];
     measurePaths = [];
     measureSpeeds = [];
     clearTableData();
     
     expTime = 0;
-    expIdx = 0;
     expRun = true;
     animate();
 }
@@ -497,10 +498,9 @@ function animate() {
         document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
         
-        // ЗАПИСЬ ИЗМЕРЕНИЙ ПРИ ДОСТИЖЕНИИ ПУТИ
+        // ЗАПИСЬ ИЗМЕРЕНИЙ
         for (let i = 0; i < PATHS.length; i++) {
             const targetS = PATHS[i];
-            // Проверяем, достигли ли пути и еще не записали его
             if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
                 measureTimes.push(expTime);
                 measurePaths.push(targetS);
@@ -508,7 +508,6 @@ function animate() {
                 
                 console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с, скорость ${v.toFixed(3)}м/с`);
                 
-                // Обновляем таблицу
                 updateTable();
                 break;
             }
@@ -535,7 +534,6 @@ function resetExperiment() {
         animId = null;
     }
     expTime = 0;
-    expIdx = 0;
     
     measureTimes = [];
     measurePaths = [];
@@ -620,7 +618,6 @@ function createCharts() {
 function updateCharts() {
     if (!chartST || !chartVT || !chartAT) return;
     
-    // Теоретические кривые
     const sData = tFull.map((t, i) => ({ x: t, y: sFull[i] }));
     const vData = tFull.map((t, i) => ({ x: t, y: vFull[i] }));
     const aData = tFull.map(t => ({ x: t, y: a }));
@@ -629,7 +626,6 @@ function updateCharts() {
     chartVT.data.datasets[0].data = vData;
     chartAT.data.datasets[0].data = aData;
     
-    // Точки измерений
     const measureDataST = measureTimes.map((t, i) => ({ x: t, y: measurePaths[i] }));
     const measureDataVT = measureTimes.map((t, i) => ({ x: t, y: measureSpeeds[i] }));
     const measureDataAT = measureTimes.map((t, i) => ({ x: t, y: a }));
@@ -672,7 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.currentBallX = sx;
     window.currentBallY = sy;
     
-    // Назначаем обработчики кнопок
     const btnSet = document.getElementById('btnSet');
     const btnStart = document.getElementById('btnStart');
     const btnReset = document.getElementById('btnReset');
