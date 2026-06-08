@@ -26,10 +26,24 @@ body {
     text-align: center;
 }
 
-
-
 .cover h1 {
     font-size: 1.8rem;
+}
+
+.mode-badge {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); background: rgba(0,0,0,0.9); }
 }
 
 .content {
@@ -145,11 +159,13 @@ body {
 #schemeCanvas {
     display: block;
     margin: 0 auto;
-    background: #fff;
+    background: #e8e8e8;
     border-radius: 8px;
+    width: 100%;
+    height: auto;
 }
 
-.table-box {
+.table-container {
     background: #FAFAFA;
     border: 2px solid #575860;
     border-radius: 12px;
@@ -168,12 +184,20 @@ body {
     background: #D6703A;
     color: #fff;
     padding: 8px 6px;
+    border: 1px solid #c05e2a;
 }
 
 .data-table td {
-    padding: 6px;
+    padding: 8px 6px;
     text-align: center;
-    border-bottom: 1px solid #e0e0e0;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.data-table td.highlight {
+    background: #ea580c20;
+    color: #ea580c;
+    font-weight: bold;
 }
 
 .plots-box {
@@ -216,11 +240,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.footer-logo img {
-    max-width: 80%;
-    max-height: 80%;
+    cursor: pointer;
 }
 
 .footer-center {
