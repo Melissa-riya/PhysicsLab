@@ -182,6 +182,7 @@ function updateTable() {
             }
         }
     }
+        updateCharts();
 }
 
 // ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ
@@ -650,14 +651,6 @@ function updateCharts() {
     }
 }
 
-function buildGraphs() {
-    if (measureTimes.length === 0) {
-        alert('Нет данных для построения графиков. Сначала проведите эксперимент (нажмите ПУСК)!');
-        return;
-    }
-    updateCharts();
-    alert(`Построено ${measureTimes.length} экспериментальных точек`);
-}
 
 // ИНИЦИАЛИЗАЦИЯ
 document.addEventListener('DOMContentLoaded', () => {
@@ -692,7 +685,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (btnStart) btnStart.onclick = startExperiment;
     if (btnReset) btnReset.onclick = resetExperiment;
-    if (btnBuild) btnBuild.onclick = buildGraphs;
     if (leftLogo) leftLogo.onclick = onLogoClick;
     
     console.log("Initialized with alpha=" + alpha + ", a=" + a + ", tMax=" + tMax);
