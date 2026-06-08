@@ -182,7 +182,7 @@ function updateTable() {
             }
         }
     }
-        updateCharts();
+    updateCharts();
 }
 
 // ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ
@@ -369,7 +369,7 @@ function drawScheme() {
     
     ctx.shadowBlur = 0;
     
-    // Заголовок
+    // Заголовок (внизу, как во втором варианте - Y=215)
     let titleText = `Линейка (α = ${alpha.toFixed(1)}°, L = ${L} м)`;
     if (currentMode) titleText += ` | Режим: ${currentMode.name}`;
     
@@ -470,10 +470,7 @@ function startExperiment() {
     animate();
 }
 
-// АНИМАЦИЯ
-let stuckCounter = 0;
-let lastS = 0;
-
+// АНИМАЦИЯ - ИСПРАВЛЕНА (без застреваний)
 function animate() {
     if (!expRun) return;
     
@@ -484,21 +481,8 @@ function animate() {
     }
     
     if (expTime <= tMax) {
-        let s = 0.1 * a * expTime * expTime;
+        let s = 0.5 * a * expTime * expTime;
         if (s > L) s = L;
-        
-        // ПРОВЕРКА НА ЗАСТРЕВАНИЕ
-        if (Math.abs(s - lastS) < 0.001 && s < L && s > 0) {
-            stuckCounter++;
-            if (stuckCounter > 5) {
-                expTime += 0.05;  // Форсированный шаг
-                stuckCounter = 0;
-            }
-        } else {
-            stuckCounter = 0;
-            lastS = s;
-        }
-        
         const v = a * expTime;
         const t = Math.min(s / L, 1);
         const rad = alpha * Math.PI / 180;
@@ -515,7 +499,7 @@ function animate() {
         document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
         
-        // Запись измерений
+        // ЗАПИСЬ ИЗМЕРЕНИЙ (без задержек)
         for (let i = 0; i < PATHS.length; i++) {
             const targetS = PATHS[i];
             if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
@@ -523,29 +507,24 @@ function animate() {
                 measurePaths.push(targetS);
                 measureSpeeds.push(v);
                 console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с`);
-                
-                setTimeout(() => {
-                    updateTable();
-                    updateCharts();
-                }, 0);
+                updateTable();
                 break;
             }
         }
         
-        // ОСНОВНОЙ ШАГ ВРЕМЕНИ (увеличен)
-        expTime += 0.025;  // было 0.01, стало 0.025 - плавнее
-        
+        // Шаг времени - оптимальный для плавности
+        expTime += 0.03;
         animId = requestAnimationFrame(animate);
     } else {
         expRun = false;
         if (animId) cancelAnimationFrame(animId);
         
+        // Принудительная запись 10-го пути
         if (!measurePaths.includes(10)) {
             measureTimes.push(tMax);
             measurePaths.push(10);
             measureSpeeds.push(a * tMax);
             updateTable();
-            updateCharts();
         }
         
         document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
@@ -679,7 +658,6 @@ function updateCharts() {
     }
 }
 
-
 // ИНИЦИАЛИЗАЦИЯ
 document.addEventListener('DOMContentLoaded', () => {
     initTable();
@@ -692,7 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSet = document.getElementById('btnSet');
     const btnStart = document.getElementById('btnStart');
     const btnReset = document.getElementById('btnReset');
-    const btnBuild = document.getElementById('btnBuild');
     const leftLogo = document.getElementById('leftLogo');
     const angleInput = document.getElementById('angleInput');
     
