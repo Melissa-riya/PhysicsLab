@@ -471,6 +471,7 @@ function startExperiment() {
 }
 
 // АНИМАЦИЯ
+// АНИМАЦИЯ (плавная)
 function animate() {
     if (!expRun) return;
     
@@ -493,41 +494,47 @@ function animate() {
         window.currentBallX = ballX;
         window.currentBallY = ballY;
         
+        // Только рисование в каждом кадре
         redraw();
         
+        // Обновление информационной панели (легкая операция)
         document.getElementById('infoTime').textContent = 't=' + expTime.toFixed(2) + 'с';
         document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
         
-        // ЗАПИСЬ ИЗМЕРЕНИЙ
+        // ЗАПИСЬ В ТАБЛИЦУ - только при достижении пути (не каждый кадр)
         for (let i = 0; i < PATHS.length; i++) {
             const targetS = PATHS[i];
             if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
                 measureTimes.push(expTime);
                 measurePaths.push(targetS);
                 measureSpeeds.push(v);
-                
-                console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с, скорость ${v.toFixed(3)}м/с`);
-                
-                updateTable();
+                console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с`);
+                updateTable();  // Это вызывает перерисовку таблицы, но редко
+                updateCharts(); // Обновление графиков только при новом измерении
                 break;
             }
         }
-
-
-    if (!measurePaths.includes(10) && s >= 9.95) {
-        measureTimes.push(expTime);
-        measurePaths.push(10);
-        measureSpeeds.push(v);
-        console.log(`Измерение: путь 10м (финиш), время ${expTime.toFixed(3)}с`);
-        updateTable();
-    }
-            
-        expTime += 0.03;
+        
+        // ПЛАВНЫЙ ШАГ (уменьшил для большей плавности)
+        expTime += 0.02;  // было 0.03, стало 0.02 - плавнее
+        
         animId = requestAnimationFrame(animate);
     } else {
+        // Финиш
         expRun = false;
         if (animId) cancelAnimationFrame(animId);
+        
+        // Принудительная запись 10-го пути если не записан
+        if (!measurePaths.includes(10)) {
+            const finalS = L;
+            const finalV = a * tMax;
+            measureTimes.push(tMax);
+            measurePaths.push(10);
+            measureSpeeds.push(finalV);
+            updateTable();
+            updateCharts();
+        }
         
         document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
         document.getElementById('infoPath').textContent = 's=' + L.toFixed(2) + 'м';
