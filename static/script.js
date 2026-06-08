@@ -376,8 +376,8 @@ function drawScheme() {
     ctx.fillStyle = '#d5d8dc';
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 1;
-    ctx.fillRect(W/2 - 150, 85, 300, 30);
-    ctx.strokeRect(W/2 - 150, 85, 300, 30);
+    ctx.fillRect(W/2 - 150, 105, 300, 30);
+    ctx.strokeRect(W/2 - 150, 105, 300, 30);
     
     ctx.fillStyle = '#2c3e50';
     ctx.font = 'bold 10px Arial';
