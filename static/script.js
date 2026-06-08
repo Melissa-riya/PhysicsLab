@@ -471,6 +471,9 @@ function startExperiment() {
 }
 
 // АНИМАЦИЯ
+let stuckCounter = 0;
+let lastS = 0;
+
 function animate() {
     if (!expRun) return;
     
@@ -483,6 +486,19 @@ function animate() {
     if (expTime <= tMax) {
         let s = 0.5 * a * expTime * expTime;
         if (s > L) s = L;
+        
+        // ПРОВЕРКА НА ЗАСТРЕВАНИЕ
+        if (Math.abs(s - lastS) < 0.001 && s < L && s > 0) {
+            stuckCounter++;
+            if (stuckCounter > 5) {
+                expTime += 0.05;  // Форсированный шаг
+                stuckCounter = 0;
+            }
+        } else {
+            stuckCounter = 0;
+            lastS = s;
+        }
+        
         const v = a * expTime;
         const t = Math.min(s / L, 1);
         const rad = alpha * Math.PI / 180;
@@ -493,15 +509,13 @@ function animate() {
         window.currentBallX = ballX;
         window.currentBallY = ballY;
         
-        // Только рисование в каждом кадре
         redraw();
         
-        // Обновление информационной панели (легкая операция)
         document.getElementById('infoTime').textContent = 't=' + expTime.toFixed(2) + 'с';
         document.getElementById('infoPath').textContent = 's=' + s.toFixed(2) + 'м';
         document.getElementById('infoSpeed').textContent = 'v=' + v.toFixed(2) + 'м/с';
         
-        // ЗАПИСЬ В ТАБЛИЦУ - только при достижении пути (не каждый кадр)
+        // Запись измерений
         for (let i = 0; i < PATHS.length; i++) {
             const targetS = PATHS[i];
             if (s >= targetS - 0.05 && !measurePaths.includes(targetS)) {
@@ -509,32 +523,29 @@ function animate() {
                 measurePaths.push(targetS);
                 measureSpeeds.push(v);
                 console.log(`Измерение: путь ${targetS}м, время ${expTime.toFixed(3)}с`);
-                updateTable();  // Это вызывает перерисовку таблицы
-                updateCharts(); // Обновление графиков только при новом измерении
+                
+                setTimeout(() => {
+                    updateTable();
+                    updateCharts();
+                }, 0);
                 break;
             }
         }
         
-        expTime += 0.01; 
+        // ОСНОВНОЙ ШАГ ВРЕМЕНИ (увеличен)
+        expTime += 0.025;  // было 0.01, стало 0.025 - плавнее
         
         animId = requestAnimationFrame(animate);
     } else {
-        // Финиш
         expRun = false;
         if (animId) cancelAnimationFrame(animId);
         
-        // Принудительная запись 10-го пути если не записан
         if (!measurePaths.includes(10)) {
-            const finalS = L;
-            const finalV = a * tMax;
             measureTimes.push(tMax);
             measurePaths.push(10);
-            measureSpeeds.push(finalV);
-
-        requestAnimationFrame(() => {
+            measureSpeeds.push(a * tMax);
             updateTable();
             updateCharts();
-
         }
         
         document.getElementById('infoTime').textContent = 't=' + tMax.toFixed(2) + 'с (финиш)';
