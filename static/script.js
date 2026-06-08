@@ -484,7 +484,7 @@ function animate() {
     }
     
     if (expTime <= tMax) {
-        let s = 0.5 * a * expTime * expTime;
+        let s = 0.1 * a * expTime * expTime;
         if (s > L) s = L;
         
         // ПРОВЕРКА НА ЗАСТРЕВАНИЕ
