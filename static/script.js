@@ -381,7 +381,7 @@ function drawScheme() {
     
     ctx.fillStyle = '#2c3e50';
     ctx.font = 'bold 10px Arial';
-    ctx.fillText(titleText, W/2, 225);
+    ctx.fillText(titleText, W/2, 235);
     
     // Сохраняем координаты для кликов
     window.rulerClickAreas = [];
